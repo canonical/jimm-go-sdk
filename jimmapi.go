@@ -1,6 +1,6 @@
 // Copyright 2020 Canonical Ltd.
 
-package api
+package jimmapi
 
 import (
 	jujuparams "github.com/juju/juju/rpc/params"

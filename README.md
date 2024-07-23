@@ -44,9 +44,6 @@ info, err := client.RemoveController(req)
 if err != nil {
     // Handle error
 }
-
-// Use the controller info
-fmt.Printf("Removed controller: %s", info.Name)
 ```
 
 ## Documentation
