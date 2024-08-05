@@ -20,6 +20,11 @@ const (
 	ServiceAccountDomain = "serviceaccount"
 )
 
+var (
+	// ErrInvalidClientID indicates an invalid client ID error.
+	ErrInvalidClientID = errors.New("invalid client ID")
+)
+
 // Service accounts are an OIDC/OAuth concept which allows for machine<->machine communication.
 // Service accounts are identified by their client ID.
 
@@ -81,7 +86,7 @@ func EnsureValidServiceAccountId(id string) (string, error) {
 	}
 
 	if !IsValidServiceAccountId(id) {
-		return "", errors.New("invalid client ID")
+		return "", ErrInvalidClientID
 	}
 	return id, nil
 }
