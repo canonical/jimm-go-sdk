@@ -3,10 +3,10 @@
 package names
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 
-	"github.com/canonical/jimm/internal/errors"
 	"github.com/juju/names/v5"
 )
 
@@ -81,7 +81,7 @@ func EnsureValidServiceAccountId(id string) (string, error) {
 	}
 
 	if !IsValidServiceAccountId(id) {
-		return "", errors.E(errors.CodeBadRequest, "invalid client ID")
+		return "", errors.New("invalid client ID")
 	}
 	return id, nil
 }
