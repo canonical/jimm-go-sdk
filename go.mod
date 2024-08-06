@@ -5,7 +5,8 @@ go 1.22.3
 require (
 	github.com/frankban/quicktest v1.14.6
 	github.com/google/uuid v1.6.0
-	github.com/juju/juju v0.0.0-20240803013908-7b661d571687
+	// v3.5.3
+	github.com/juju/juju v0.0.0-20240724081236-63d460f9ee6c
 	github.com/juju/names/v5 v5.0.0
 	github.com/stretchr/testify v1.9.0
 )
