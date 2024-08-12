@@ -1,6 +1,6 @@
 module github.com/canonical/jimm-go-sdk/v3
 
-go 1.22.3
+go 1.21
 
 require (
 	github.com/frankban/quicktest v1.14.6
