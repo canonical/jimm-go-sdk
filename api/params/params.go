@@ -1,4 +1,4 @@
-// Copyright 2024 Canonical.
+// Copyright 2025 Canonical.
 
 package params
 
@@ -167,10 +167,6 @@ type ControllerInfo struct {
 
 	// CloudRegion is the region that this controller is running in.
 	CloudRegion string `json:"cloud-region,omitempty"`
-
-	// Username contains the username that JIMM uses to connect to the
-	// controller.
-	Username string `json:"username"`
 
 	// The version of the juju agent running on the controller.
 	AgentVersion string `json:"agent-version"`
@@ -361,7 +357,20 @@ type CheckRelationRequest struct {
 // CheckRelationResponse simple responds with an object containing a boolean of 'allowed' or not
 // when a check for access is requested.
 type CheckRelationResponse struct {
-	Allowed bool `json:"allowed" yaml:"allowed"`
+	Allowed bool   `json:"allowed" yaml:"allowed"`
+	Error   string `json:"error,omitempty" yaml:"error,omitempty"`
+}
+
+// CheckRelationsRequest holds the tuples containing the object, target object and relation that we wish
+// verify authorisation with.
+type CheckRelationsRequest struct {
+	Tuples []RelationshipTuple `json:"tuples"`
+}
+
+// CheckRelationResponse simple responds with an object containing a boolean of 'allowed' or not
+// when a check for access is requested.
+type CheckRelationsResponse struct {
+	Results []CheckRelationResponse `json:"results" yaml:"results"`
 }
 
 // ListRelationshipTuplesRequests holds the request information to list tuples.
@@ -471,8 +480,8 @@ type PurgeLogsResponse struct {
 // target controller must be specified with both the source model and
 // target controller residing within JIMM.
 type MigrateModelInfo struct {
-	// ModelTag is a tag of the form "model-<UIID>"
-	ModelTag string `json:"model-tag"`
+	// TargetModelNameOrUUID can be either the model name or model UUID.
+	TargetModelNameOrUUID string `json:"model-tag"`
 	// TargetController is the controller name of the form "<name>"
 	TargetController string `json:"target-controller"`
 }
@@ -523,45 +532,6 @@ type LoginWithSessionTokenRequest struct {
 type LoginWithClientCredentialsRequest struct {
 	ClientID     string `json:"client-id"`
 	ClientSecret string `json:"client-secret"`
-}
-
-// AddServiceAccountRequest holds a request to add a service account.
-type AddServiceAccountRequest struct {
-	// ClientID holds the client id of the service account.
-	ClientID string `json:"client-id"`
-}
-
-// CopyServiceAccountCredentialRequest holds a request to copy a user cloud-credential to a service account.
-type CopyServiceAccountCredentialRequest struct {
-	jujuparams.CloudCredentialArg
-	// ClientID holds the client id of the service account.
-	ClientID string `json:"client-id"`
-}
-
-// UpdateServiceAccountCredentialsRequest holds a request to update
-// a service accounts cloud credentials.
-type UpdateServiceAccountCredentialsRequest struct {
-	jujuparams.UpdateCredentialArgs
-	// ClientID holds the client id of the service account.
-	ClientID string `json:"client-id"`
-}
-
-// ListServiceAccountCredentialsRequest holds a request to list
-// a service accounts cloud credentials.
-type ListServiceAccountCredentialsRequest struct {
-	jujuparams.CloudCredentialArgs
-	// ClientID holds the client id of the service account.
-	ClientID string `json:"client-id"`
-}
-
-// ListServiceAccountCredentialsRequest holds a request to list
-// a service accounts cloud credentials.
-type GrantServiceAccountAccess struct {
-	// Entities holds a slice of entities (identities and groups)
-	// that should have administration access to the desired clientID.
-	Entities []string `json:"entities"`
-	// ClientID holds the client id of the service account.
-	ClientID string `json:"client-id"`
 }
 
 // WhoamiResponse holds the response for a /auth/whoami call.
