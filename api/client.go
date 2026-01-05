@@ -9,21 +9,26 @@ import (
 )
 
 // An APICaller implements the interface required to make API calls.
-type APICaller interface {
+type APICallCloser interface {
 	// APICall makes a call to the API server with the given object type,
 	// id, request and parameters. The response is filled in with the
 	// call's result if the call is successful.
 	APICall(objType string, version int, id, request string, params, response interface{}) error
+	Close() error
 }
 
 // Client is a client for the JIMM API.
 type Client struct {
-	caller APICaller
+	caller APICallCloser
 }
 
 // NewClient creates a new API client for the JIMM API.
-func NewClient(c APICaller) *Client {
+func NewClient(c APICallCloser) *Client {
 	return &Client{caller: c}
+}
+
+func (c *Client) Close() error {
+	return c.caller.Close()
 }
 
 // AddCloudToController adds the specified cloud to a specific controller in JIMM.
@@ -93,6 +98,13 @@ func (c *Client) SetControllerDeprecated(req *params.SetControllerDeprecatedRequ
 	var info params.ControllerInfo
 	err := c.caller.APICall("JIMM", 4, "", "SetControllerDeprecated", req, &info)
 	return info, err
+}
+
+// UpgradeTo initiates a controller upgrade to the specified version.
+func (c *Client) UpgradeTo(req *params.UpgradeToRequest) (params.UpgradeToResponse, error) {
+	var resp params.UpgradeToResponse
+	err := c.caller.APICall("JIMM", 4, "", "UpgradeTo", req, &resp)
+	return resp, err
 }
 
 // FullModelStatus returns the full status of the juju model.
@@ -245,4 +257,45 @@ func (c *Client) Version() (params.VersionResponse, error) {
 	var response params.VersionResponse
 	err := c.caller.APICall("JIMM", 4, "", "Version", nil, &response)
 	return response, err
+}
+
+// PrepareModelMigration prepares JIMM for an incoming ModelMigration.
+func (c *Client) PrepareModelMigration(req *params.PrepareModelMigrationRequest) (params.PrepareModelMigrationResponse, error) {
+	var response params.PrepareModelMigrationResponse
+	err := c.caller.APICall("JIMM", 4, "", "PrepareModelMigration", req, &response)
+	return response, err
+}
+
+// ListMigrationTargets returns the list of juju controllers that the given
+// model could be migrated to.
+func (c *Client) ListMigrationTargets(req *params.ListMigrationTargetsRequest) ([]params.ControllerInfo, error) {
+	var response params.ListControllersResponse
+	err := c.caller.APICall("JIMM", 4, "", "ListMigrationTargets", req, &response)
+	return response.Controllers, err
+}
+
+// GetJobInfo retrieves the status and logs of a job.
+func (c *Client) GetJobInfo(req *params.GetJobInfoRequest) (params.GetJobInfoResponse, error) {
+	var response params.GetJobInfoResponse
+	err := c.caller.APICall("JIMM", 4, "", "GetJobInfo", req, &response)
+	return response, err
+}
+
+// StopJob stops a job on the JIMM server.
+func (c *Client) StopJob(req *params.StopJobRequest) error {
+	return c.caller.APICall("JIMM", 4, "", "StopJob", req, nil)
+}
+
+// StartBootstrapJob starts a bootstrap operation on the JIMM server.
+func (c *Client) StartBootstrapJob(req *params.BootstrapParams) (*params.StartJobResponse, error) {
+	var response params.StartJobResponse
+	err := c.caller.APICall("JIMM", 4, "", "StartBootstrapJob", req, &response)
+	return &response, err
+}
+
+// StartDestroyControllerJob starts a destroy-controller operation on the JIMM server.
+func (c *Client) StartDestroyControllerJob(req *params.DestroyControllerRequest) (*params.StartJobResponse, error) {
+	var response params.StartJobResponse
+	err := c.caller.APICall("JIMM", 4, "", "StartDestroyControllerJob", req, &response)
+	return &response, err
 }
