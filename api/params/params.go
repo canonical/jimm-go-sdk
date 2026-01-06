@@ -18,6 +18,16 @@ type AddCloudToControllerRequest struct {
 	ControllerName string `json:"controller-name"`
 }
 
+// An AddModelToControllerRequest is the request sent when adding
+// a new model to a specific controller.
+type AddModelToControllerRequest struct {
+	jujuparams.ModelCreateArgs
+
+	// ControllerName is the name of the controller to which the
+	// model should be added.
+	ControllerName string `json:"controller-name"`
+}
+
 // A RemoveCloudFromControllerRequest is the request sent when removing
 // cloud from a specific controller.
 type RemoveCloudFromControllerRequest struct {
@@ -234,6 +244,19 @@ type SetControllerDeprecatedRequest struct {
 	// Deprecated specifies whether the controller should be set to
 	// deprecated or not.
 	Deprecated bool `json:"deprecated"`
+}
+
+// UpgradeToRequest holds the parameters for phase 1 for automated upgrades.
+type UpgradeToRequest struct {
+	// ModelTag is the tag of the model to upgrade.
+	ModelTag string `json:"model-tag"`
+	// TargetControllerVersion is the target controller version to upgrade to.
+	TargetControllerVersion string `json:"target-controller-version"`
+}
+
+// UpgradeToResponse holds the response for phase 1 of an automated upgrade.
+type UpgradeToResponse struct {
+	Success bool `json:"success"`
 }
 
 // FullModelStatusRequest is the request that is sent in a FullModelStatus method.
@@ -544,4 +567,98 @@ type WhoamiResponse struct {
 type VersionResponse struct {
 	Version string `json:"version" yaml:"version"`
 	Commit  string `json:"commit" yaml:"commit"`
+}
+
+// PrepareModelMigrationRequest holds the details to prepare JIMM
+// for a model migration.
+type PrepareModelMigrationRequest struct {
+	ModelTag              string            `json:"model-tag" yaml:"model-tag"`
+	BackingControllerName string            `json:"backing-controller-name" yaml:"backing-controller-name"`
+	UserMapping           map[string]string `json:"user-mapping" yaml:"user-mapping"`
+}
+
+// PrepareModelMigrationResponse holds the response for a model migration.
+type PrepareModelMigrationResponse struct {
+	// Token is the token that should be used to initiate the migration
+	// as it allows the source controller to authenticate with JIMM.
+	Token string `json:"token" yaml:"token"`
+}
+
+// ListMigrationTargetsRequest holds the model to query for controllers
+// that are valid targets for an internal model migration.
+type ListMigrationTargetsRequest struct {
+	// ModelTag holds the tag of the model.
+	ModelTag string `json:"model-tag"`
+}
+
+// JobStatus represents the status of a job.
+type JobStatus string
+
+const (
+	StatusRunning    JobStatus = "running"
+	StatusSuccessful JobStatus = "successful"
+	StatusPending    JobStatus = "pending"
+	StatusFailed     JobStatus = "failed"
+)
+
+// GetJobInfoRequest holds the request to get the status of a job.
+type GetJobInfoRequest struct {
+	// JobID is the ID of the job to get the status for.
+	JobID string `json:"job-id"`
+	// Watermark is the line number to start reading logs from.
+	Watermark int `json:"watermark"`
+}
+
+// GetJobInfoResponse holds the response for a job status.
+type GetJobInfoResponse struct {
+	// Status is the status of the job.
+	Status JobStatus `json:"status"`
+	// Logs are the logs for the job.
+	Logs []string `json:"logs"`
+	// Watermark is the line number to use for the next request.
+	Watermark int `json:"watermark"`
+	// Error is the error message if the job failed.
+	Error string `json:"error,omitempty"`
+}
+
+// StopJobRequest holds the request to stop a job.
+type StopJobRequest struct {
+	// JobID is the ID of the job to stop.
+	JobID string `json:"job-id"`
+}
+
+// StartJobResponse holds the response for starting
+// a controller job.
+type StartJobResponse struct {
+	// JobID is the ID of the job that was started.
+	JobID string `json:"job-id"`
+}
+
+// BootstrapParams holds parameters for starting
+// a controller bootstrap job.
+type BootstrapParams struct {
+	// CloudName specifies the target cloud for the controller.
+	CloudName string `json:"cloud-name"`
+	// RegionName specifies the target region for the controller.
+	RegionName string `json:"region-name"`
+	// Cloud holds the cloud definition that will be used to bootstrap the controller.
+	Cloud jujuparams.Cloud `json:"cloud,omitempty"`
+	// Credential contains the cloud credential and its tag, this credential will be used against the
+	// the cloud provided to bootstrap the controller.
+	Credential jujuparams.CloudCredential `json:"credential"`
+
+	// ControllerName specifies the name of the controller as recorded in JIMM.
+	ControllerName string `json:"controller-name"`
+	// Config holds configuration options for the bootstrap job.
+	Config map[string]string `json:"config"`
+
+	// ControllerVersion is the version of the controller to be bootstrapped.
+	ControllerVersion string `json:"controller-version"`
+}
+
+// DestroyControllerRequest holds the name of
+// the controller to be destroyed.
+type DestroyControllerRequest struct {
+	// ControllerName of the controller to destroy
+	ControllerName string `json:"controller-name"`
 }
