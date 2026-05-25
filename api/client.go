@@ -3,6 +3,8 @@
 package api
 
 import (
+	"context"
+
 	jujuparams "github.com/juju/juju/rpc/params"
 
 	"github.com/canonical/jimm-go-sdk/v3/api/params"
@@ -13,7 +15,7 @@ type APICallCloser interface {
 	// APICall makes a call to the API server with the given object type,
 	// id, request and parameters. The response is filled in with the
 	// call's result if the call is successful.
-	APICall(objType string, version int, id, request string, params, response interface{}) error
+	APICall(ctx context.Context, objType string, version int, id, request string, params, response any) error
 	Close() error
 }
 
@@ -32,34 +34,34 @@ func (c *Client) Close() error {
 }
 
 // AddCloudToController adds the specified cloud to a specific controller in JIMM.
-func (c *Client) AddCloudToController(req *params.AddCloudToControllerRequest) error {
-	return c.caller.APICall("JIMM", 4, "", "AddCloudToController", req, nil)
+func (c *Client) AddCloudToController(ctx context.Context, req *params.AddCloudToControllerRequest) error {
+	return c.caller.APICall(ctx, "JIMM", 4, "", "AddCloudToController", req, nil)
 }
 
 // AddModelToController adds a new model to a controller in JIMM.
-func (c *Client) AddModelToController(req *params.AddModelToControllerRequest) (jujuparams.ModelInfo, error) {
+func (c *Client) AddModelToController(ctx context.Context, req *params.AddModelToControllerRequest) (jujuparams.ModelInfo, error) {
 	var info jujuparams.ModelInfo
-	err := c.caller.APICall("JIMM", 4, "", "AddModelToController", req, &info)
+	err := c.caller.APICall(ctx, "JIMM", 4, "", "AddModelToController", req, &info)
 	return info, err
 }
 
 // AddController adds a new controller to JIMM.
-func (c *Client) AddController(req *params.AddControllerRequest) (params.ControllerInfo, error) {
+func (c *Client) AddController(ctx context.Context, req *params.AddControllerRequest) (params.ControllerInfo, error) {
 	var info params.ControllerInfo
-	err := c.caller.APICall("JIMM", 4, "", "AddController", req, &info)
+	err := c.caller.APICall(ctx, "JIMM", 4, "", "AddController", req, &info)
 	return info, err
 }
 
 // DisableControllerUUIDMasking disables UUID the masking of the real
 // controller UUID with JIMM's UUID in those response.
-func (c *Client) DisableControllerUUIDMasking() error {
-	return c.caller.APICall("JIMM", 4, "", "DisableControllerUUIDMasking", nil, nil)
+func (c *Client) DisableControllerUUIDMasking(ctx context.Context) error {
+	return c.caller.APICall(ctx, "JIMM", 4, "", "DisableControllerUUIDMasking", nil, nil)
 }
 
 // FindAuditEvents finds audit events that match the requested filters.
-func (c *Client) FindAuditEvents(req *params.FindAuditEventsRequest) (params.AuditEvents, error) {
+func (c *Client) FindAuditEvents(ctx context.Context, req *params.FindAuditEventsRequest) (params.AuditEvents, error) {
 	var resp params.AuditEvents
-	if err := c.caller.APICall("JIMM", 4, "", "FindAuditEvents", req, &resp); err != nil {
+	if err := c.caller.APICall(ctx, "JIMM", 4, "", "FindAuditEvents", req, &resp); err != nil {
 		return params.AuditEvents{}, err
 	}
 	return resp, nil
@@ -67,148 +69,148 @@ func (c *Client) FindAuditEvents(req *params.FindAuditEventsRequest) (params.Aud
 
 // GrantAuditLogAccess grants the given access to the audit log to the
 // given user.
-func (c *Client) GrantAuditLogAccess(req *params.AuditLogAccessRequest) error {
-	return c.caller.APICall("JIMM", 4, "", "GrantAuditLogAccess", req, nil)
+func (c *Client) GrantAuditLogAccess(ctx context.Context, req *params.AuditLogAccessRequest) error {
+	return c.caller.APICall(ctx, "JIMM", 4, "", "GrantAuditLogAccess", req, nil)
 }
 
 // ListControllers returns controller info for all controllers known to
 // JIMM.
-func (c *Client) ListControllers() ([]params.ControllerInfo, error) {
+func (c *Client) ListControllers(ctx context.Context) ([]params.ControllerInfo, error) {
 	var resp params.ListControllersResponse
-	err := c.caller.APICall("JIMM", 4, "", "ListControllers", nil, &resp)
+	err := c.caller.APICall(ctx, "JIMM", 4, "", "ListControllers", nil, &resp)
 	return resp.Controllers, err
 }
 
 // RemoveCloudFromController removes the specified cloud from a specific controller.
-func (c *Client) RemoveCloudFromController(req *params.RemoveCloudFromControllerRequest) error {
-	return c.caller.APICall("JIMM", 4, "", "RemoveCloudFromController", req, nil)
+func (c *Client) RemoveCloudFromController(ctx context.Context, req *params.RemoveCloudFromControllerRequest) error {
+	return c.caller.APICall(ctx, "JIMM", 4, "", "RemoveCloudFromController", req, nil)
 }
 
 // RemoveController removes a controller from the JAAS system. Only
 // controllers that are unavailable can be removed, unless force is used.
 // The return value contains the details of the controller that was
 // removed.
-func (c *Client) RemoveController(req *params.RemoveControllerRequest) (params.ControllerInfo, error) {
+func (c *Client) RemoveController(ctx context.Context, req *params.RemoveControllerRequest) (params.ControllerInfo, error) {
 	var info params.ControllerInfo
-	err := c.caller.APICall("JIMM", 4, "", "RemoveController", req, &info)
+	err := c.caller.APICall(ctx, "JIMM", 4, "", "RemoveController", req, &info)
 	return info, err
 }
 
 // RevokeAuditLogAccess revokes the given access to the audit log from the
 // given user.
-func (c *Client) RevokeAuditLogAccess(req *params.AuditLogAccessRequest) error {
-	return c.caller.APICall("JIMM", 4, "", "RevokeAuditLogAccess", req, nil)
+func (c *Client) RevokeAuditLogAccess(ctx context.Context, req *params.AuditLogAccessRequest) error {
+	return c.caller.APICall(ctx, "JIMM", 4, "", "RevokeAuditLogAccess", req, nil)
 }
 
 // SetControllerDeprecated sets the deprecated status of a controller.
-func (c *Client) SetControllerDeprecated(req *params.SetControllerDeprecatedRequest) (params.ControllerInfo, error) {
+func (c *Client) SetControllerDeprecated(ctx context.Context, req *params.SetControllerDeprecatedRequest) (params.ControllerInfo, error) {
 	var info params.ControllerInfo
-	err := c.caller.APICall("JIMM", 4, "", "SetControllerDeprecated", req, &info)
+	err := c.caller.APICall(ctx, "JIMM", 4, "", "SetControllerDeprecated", req, &info)
 	return info, err
 }
 
 // UpgradeTo initiates a controller upgrade to the specified version.
-func (c *Client) UpgradeTo(req *params.UpgradeToRequest) (params.UpgradeToResponse, error) {
+func (c *Client) UpgradeTo(ctx context.Context, req *params.UpgradeToRequest) (params.UpgradeToResponse, error) {
 	var resp params.UpgradeToResponse
-	err := c.caller.APICall("JIMM", 4, "", "UpgradeTo", req, &resp)
+	err := c.caller.APICall(ctx, "JIMM", 4, "", "UpgradeTo", req, &resp)
 	return resp, err
 }
 
 // FullModelStatus returns the full status of the juju model.
-func (c *Client) FullModelStatus(req *params.FullModelStatusRequest) (jujuparams.FullStatus, error) {
+func (c *Client) FullModelStatus(ctx context.Context, req *params.FullModelStatusRequest) (jujuparams.FullStatus, error) {
 	var status jujuparams.FullStatus
-	err := c.caller.APICall("JIMM", 4, "", "FullModelStatus", req, &status)
+	err := c.caller.APICall(ctx, "JIMM", 4, "", "FullModelStatus", req, &status)
 	return status, err
 }
 
 // ImportModel imports a model running on a controller.
-func (c *Client) ImportModel(req *params.ImportModelRequest) error {
-	return c.caller.APICall("JIMM", 4, "", "ImportModel", req, nil)
+func (c *Client) ImportModel(ctx context.Context, req *params.ImportModelRequest) error {
+	return c.caller.APICall(ctx, "JIMM", 4, "", "ImportModel", req, nil)
 }
 
 // UpdateMigratedModel updates which controller a model is running on
 // following an external migration operation.
-func (c *Client) UpdateMigratedModel(req *params.UpdateMigratedModelRequest) error {
-	return c.caller.APICall("JIMM", 4, "", "UpdateMigratedModel", req, nil)
+func (c *Client) UpdateMigratedModel(ctx context.Context, req *params.UpdateMigratedModelRequest) error {
+	return c.caller.APICall(ctx, "JIMM", 4, "", "UpdateMigratedModel", req, nil)
 }
 
 // Authorisation RPC commands
 
 // User Groups
 // AddGroup adds the group to JIMM.
-func (c *Client) AddGroup(req *params.AddGroupRequest) (params.AddGroupResponse, error) {
+func (c *Client) AddGroup(ctx context.Context, req *params.AddGroupRequest) (params.AddGroupResponse, error) {
 	var resp params.AddGroupResponse
-	err := c.caller.APICall("JIMM", 4, "", "AddGroup", req, &resp)
+	err := c.caller.APICall(ctx, "JIMM", 4, "", "AddGroup", req, &resp)
 	return resp, err
 }
 
 // GetGroup returns the group with the given UUID or name. Only one should be provided.
-func (c *Client) GetGroup(req *params.GetGroupRequest) (params.GetGroupResponse, error) {
+func (c *Client) GetGroup(ctx context.Context, req *params.GetGroupRequest) (params.GetGroupResponse, error) {
 	var resp params.GetGroupResponse
-	err := c.caller.APICall("JIMM", 4, "", "GetGroup", req, &resp)
+	err := c.caller.APICall(ctx, "JIMM", 4, "", "GetGroup", req, &resp)
 	return resp, err
 }
 
 // RenameGroup renames a group in JIMM.
-func (c *Client) RenameGroup(req *params.RenameGroupRequest) error {
-	return c.caller.APICall("JIMM", 4, "", "RenameGroup", req, nil)
+func (c *Client) RenameGroup(ctx context.Context, req *params.RenameGroupRequest) error {
+	return c.caller.APICall(ctx, "JIMM", 4, "", "RenameGroup", req, nil)
 }
 
 // RemoveGroup removes a group in JIMM.
-func (c *Client) RemoveGroup(req *params.RemoveGroupRequest) error {
-	return c.caller.APICall("JIMM", 4, "", "RemoveGroup", req, nil)
+func (c *Client) RemoveGroup(ctx context.Context, req *params.RemoveGroupRequest) error {
+	return c.caller.APICall(ctx, "JIMM", 4, "", "RemoveGroup", req, nil)
 }
 
 // ListGroups lists the groups in JIMM.
-func (c *Client) ListGroups(req *params.ListGroupsRequest) ([]params.Group, error) {
+func (c *Client) ListGroups(ctx context.Context, req *params.ListGroupsRequest) ([]params.Group, error) {
 	var resp params.ListGroupResponse
-	err := c.caller.APICall("JIMM", 4, "", "ListGroups", req, &resp)
+	err := c.caller.APICall(ctx, "JIMM", 4, "", "ListGroups", req, &resp)
 	return resp.Groups, err
 }
 
 // User Roles
 
 // AddRole adds the Role to JIMM.
-func (c *Client) AddRole(req *params.AddRoleRequest) (params.AddRoleResponse, error) {
+func (c *Client) AddRole(ctx context.Context, req *params.AddRoleRequest) (params.AddRoleResponse, error) {
 	var resp params.AddRoleResponse
-	err := c.caller.APICall("JIMM", 4, "", "AddRole", req, &resp)
+	err := c.caller.APICall(ctx, "JIMM", 4, "", "AddRole", req, &resp)
 	return resp, err
 }
 
 // GetRole returns the Role with the given UUID or name. Only one should be provided.
-func (c *Client) GetRole(req *params.GetRoleRequest) (params.GetRoleResponse, error) {
+func (c *Client) GetRole(ctx context.Context, req *params.GetRoleRequest) (params.GetRoleResponse, error) {
 	var resp params.GetRoleResponse
-	err := c.caller.APICall("JIMM", 4, "", "GetRole", req, &resp)
+	err := c.caller.APICall(ctx, "JIMM", 4, "", "GetRole", req, &resp)
 	return resp, err
 }
 
 // RenameRole renames a Role in JIMM.
-func (c *Client) RenameRole(req *params.RenameRoleRequest) error {
-	return c.caller.APICall("JIMM", 4, "", "RenameRole", req, nil)
+func (c *Client) RenameRole(ctx context.Context, req *params.RenameRoleRequest) error {
+	return c.caller.APICall(ctx, "JIMM", 4, "", "RenameRole", req, nil)
 }
 
 // RemoveRole removes a Role in JIMM.
-func (c *Client) RemoveRole(req *params.RemoveRoleRequest) error {
-	return c.caller.APICall("JIMM", 4, "", "RemoveRole", req, nil)
+func (c *Client) RemoveRole(ctx context.Context, req *params.RemoveRoleRequest) error {
+	return c.caller.APICall(ctx, "JIMM", 4, "", "RemoveRole", req, nil)
 }
 
 // ListRoles lists the Roles in JIMM.
-func (c *Client) ListRoles(req *params.ListRolesRequest) ([]params.Role, error) {
+func (c *Client) ListRoles(ctx context.Context, req *params.ListRolesRequest) ([]params.Role, error) {
 	var resp params.ListRoleResponse
-	err := c.caller.APICall("JIMM", 4, "", "ListRoles", req, &resp)
+	err := c.caller.APICall(ctx, "JIMM", 4, "", "ListRoles", req, &resp)
 	return resp.Roles, err
 }
 
 // Tuple management
 
 // AddRelation adds a relational tuple in JIMM.
-func (c *Client) AddRelation(req *params.AddRelationRequest) error {
-	return c.caller.APICall("JIMM", 4, "", "AddRelation", req, nil)
+func (c *Client) AddRelation(ctx context.Context, req *params.AddRelationRequest) error {
+	return c.caller.APICall(ctx, "JIMM", 4, "", "AddRelation", req, nil)
 }
 
 // RemoveRelation removes a relational tuple in JIMM.
-func (c *Client) RemoveRelation(req *params.RemoveRelationRequest) error {
-	return c.caller.APICall("JIMM", 4, "", "RemoveRelation", req, nil)
+func (c *Client) RemoveRelation(ctx context.Context, req *params.RemoveRelationRequest) error {
+	return c.caller.APICall(ctx, "JIMM", 4, "", "RemoveRelation", req, nil)
 }
 
 // CheckRelation verifies that the object graph reaches the provided
@@ -216,93 +218,93 @@ func (c *Client) RemoveRelation(req *params.RemoveRelationRequest) error {
 // This object could be another group, model, controller, etc.
 // This command corresponds directly to:
 // https://openfga.dev/api/service#/Relationship%20Queries/Check
-func (c *Client) CheckRelation(req *params.CheckRelationRequest) (params.CheckRelationResponse, error) {
+func (c *Client) CheckRelation(ctx context.Context, req *params.CheckRelationRequest) (params.CheckRelationResponse, error) {
 	var checkResp params.CheckRelationResponse
-	err := c.caller.APICall("JIMM", 4, "", "CheckRelation", req, &checkResp)
+	err := c.caller.APICall(ctx, "JIMM", 4, "", "CheckRelation", req, &checkResp)
 	return checkResp, err
 }
 
 // CheckRelations performs an authorisation check for a list of tuples.
-func (c *Client) CheckRelations(req *params.CheckRelationsRequest) (params.CheckRelationsResponse, error) {
+func (c *Client) CheckRelations(ctx context.Context, req *params.CheckRelationsRequest) (params.CheckRelationsResponse, error) {
 	var checksResp params.CheckRelationsResponse
-	err := c.caller.APICall("JIMM", 4, "", "CheckRelations", req, &checksResp)
+	err := c.caller.APICall(ctx, "JIMM", 4, "", "CheckRelations", req, &checksResp)
 	return checksResp, err
 }
 
 // ListRelationshipTuples returns a list of tuples matching the specified criteria.
-func (c *Client) ListRelationshipTuples(req *params.ListRelationshipTuplesRequest) (*params.ListRelationshipTuplesResponse, error) {
+func (c *Client) ListRelationshipTuples(ctx context.Context, req *params.ListRelationshipTuplesRequest) (*params.ListRelationshipTuplesResponse, error) {
 	var response params.ListRelationshipTuplesResponse
-	err := c.caller.APICall("JIMM", 4, "", "ListRelationshipTuples", req, &response)
+	err := c.caller.APICall(ctx, "JIMM", 4, "", "ListRelationshipTuples", req, &response)
 	return &response, err
 }
 
 // CrossModelQuery enables users to query all of their available models and each entity within the model.
 //
 // The query will run against output exactly like "juju status --format json", but for each of their models.
-func (c *Client) CrossModelQuery(req *params.CrossModelQueryRequest) (*params.CrossModelQueryResponse, error) {
+func (c *Client) CrossModelQuery(ctx context.Context, req *params.CrossModelQueryRequest) (*params.CrossModelQueryResponse, error) {
 	var response params.CrossModelQueryResponse
-	err := c.caller.APICall("JIMM", 4, "", "CrossModelQuery", req, &response)
+	err := c.caller.APICall(ctx, "JIMM", 4, "", "CrossModelQuery", req, &response)
 	return &response, err
 }
 
 // PurgeLogs purges logs from the database before the given date.
-func (c *Client) PurgeLogs(req *params.PurgeLogsRequest) (*params.PurgeLogsResponse, error) {
+func (c *Client) PurgeLogs(ctx context.Context, req *params.PurgeLogsRequest) (*params.PurgeLogsResponse, error) {
 	var response params.PurgeLogsResponse
-	err := c.caller.APICall("JIMM", 4, "", "PurgeLogs", req, &response)
+	err := c.caller.APICall(ctx, "JIMM", 4, "", "PurgeLogs", req, &response)
 	return &response, err
 }
 
 // MigrateModel migrates a model between two controllers that are attached to JIMM.
-func (c *Client) MigrateModel(req *params.MigrateModelRequest) (*jujuparams.InitiateMigrationResults, error) {
+func (c *Client) MigrateModel(ctx context.Context, req *params.MigrateModelRequest) (*jujuparams.InitiateMigrationResults, error) {
 	var response jujuparams.InitiateMigrationResults
-	err := c.caller.APICall("JIMM", 4, "", "MigrateModel", req, &response)
+	err := c.caller.APICall(ctx, "JIMM", 4, "", "MigrateModel", req, &response)
 	return &response, err
 }
 
 // Version returns version info of the controller.
-func (c *Client) Version() (params.VersionResponse, error) {
+func (c *Client) Version(ctx context.Context) (params.VersionResponse, error) {
 	var response params.VersionResponse
-	err := c.caller.APICall("JIMM", 4, "", "Version", nil, &response)
+	err := c.caller.APICall(ctx, "JIMM", 4, "", "Version", nil, &response)
 	return response, err
 }
 
 // PrepareModelMigration prepares JIMM for an incoming ModelMigration.
-func (c *Client) PrepareModelMigration(req *params.PrepareModelMigrationRequest) (params.PrepareModelMigrationResponse, error) {
+func (c *Client) PrepareModelMigration(ctx context.Context, req *params.PrepareModelMigrationRequest) (params.PrepareModelMigrationResponse, error) {
 	var response params.PrepareModelMigrationResponse
-	err := c.caller.APICall("JIMM", 4, "", "PrepareModelMigration", req, &response)
+	err := c.caller.APICall(ctx, "JIMM", 4, "", "PrepareModelMigration", req, &response)
 	return response, err
 }
 
 // ListMigrationTargets returns the list of juju controllers that the given
 // model could be migrated to.
-func (c *Client) ListMigrationTargets(req *params.ListMigrationTargetsRequest) ([]params.ControllerInfo, error) {
+func (c *Client) ListMigrationTargets(ctx context.Context, req *params.ListMigrationTargetsRequest) ([]params.ControllerInfo, error) {
 	var response params.ListControllersResponse
-	err := c.caller.APICall("JIMM", 4, "", "ListMigrationTargets", req, &response)
+	err := c.caller.APICall(ctx, "JIMM", 4, "", "ListMigrationTargets", req, &response)
 	return response.Controllers, err
 }
 
 // GetJobInfo retrieves the status and logs of a job.
-func (c *Client) GetJobInfo(req *params.GetJobInfoRequest) (params.GetJobInfoResponse, error) {
+func (c *Client) GetJobInfo(ctx context.Context, req *params.GetJobInfoRequest) (params.GetJobInfoResponse, error) {
 	var response params.GetJobInfoResponse
-	err := c.caller.APICall("JIMM", 4, "", "GetJobInfo", req, &response)
+	err := c.caller.APICall(ctx, "JIMM", 4, "", "GetJobInfo", req, &response)
 	return response, err
 }
 
 // StopJob stops a job on the JIMM server.
-func (c *Client) StopJob(req *params.StopJobRequest) error {
-	return c.caller.APICall("JIMM", 4, "", "StopJob", req, nil)
+func (c *Client) StopJob(ctx context.Context, req *params.StopJobRequest) error {
+	return c.caller.APICall(ctx, "JIMM", 4, "", "StopJob", req, nil)
 }
 
 // StartBootstrapJob starts a bootstrap operation on the JIMM server.
-func (c *Client) StartBootstrapJob(req *params.BootstrapParams) (*params.StartJobResponse, error) {
+func (c *Client) StartBootstrapJob(ctx context.Context, req *params.BootstrapParams) (*params.StartJobResponse, error) {
 	var response params.StartJobResponse
-	err := c.caller.APICall("JIMM", 4, "", "StartBootstrapJob", req, &response)
+	err := c.caller.APICall(ctx, "JIMM", 4, "", "StartBootstrapJob", req, &response)
 	return &response, err
 }
 
 // StartDestroyControllerJob starts a destroy-controller operation on the JIMM server.
-func (c *Client) StartDestroyControllerJob(req *params.DestroyControllerRequest) (*params.StartJobResponse, error) {
+func (c *Client) StartDestroyControllerJob(ctx context.Context, req *params.DestroyControllerRequest) (*params.StartJobResponse, error) {
 	var response params.StartJobResponse
-	err := c.caller.APICall("JIMM", 4, "", "StartDestroyControllerJob", req, &response)
+	err := c.caller.APICall(ctx, "JIMM", 4, "", "StartDestroyControllerJob", req, &response)
 	return &response, err
 }
