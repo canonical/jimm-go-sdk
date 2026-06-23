@@ -1,9 +1,12 @@
-// Copyright 2025 Canonical.
+// Copyright 2026 Canonical.
 
 package api
 
 import (
+	"github.com/juju/errors"
+	jujucloud "github.com/juju/juju/cloud"
 	jujuparams "github.com/juju/juju/rpc/params"
+	"github.com/juju/names/v5"
 
 	"github.com/canonical/jimm-go-sdk/v3/api/params"
 )
@@ -13,7 +16,7 @@ type APICallCloser interface {
 	// APICall makes a call to the API server with the given object type,
 	// id, request and parameters. The response is filled in with the
 	// call's result if the call is successful.
-	APICall(objType string, version int, id, request string, params, response interface{}) error
+	APICall(objType string, version int, id, request string, params, response any) error
 	Close() error
 }
 
@@ -105,6 +108,33 @@ func (c *Client) SetControllerDeprecated(req *params.SetControllerDeprecatedRequ
 	var info params.ControllerInfo
 	err := c.caller.APICall("JIMM", 4, "", "SetControllerDeprecated", req, &info)
 	return info, err
+}
+
+// SaveControllerProfile creates or replaces a saved controller profile.
+func (c *Client) SaveControllerProfile(req *params.SaveControllerProfileRequest) (params.SaveControllerProfileResponse, error) {
+	var response params.SaveControllerProfileResponse
+	err := c.caller.APICall("JIMM", 4, "", "SaveControllerProfile", req, &response)
+	return response, err
+}
+
+// GetControllerProfile retrieves a saved controller profile by name.
+func (c *Client) GetControllerProfile(req *params.GetControllerProfileRequest) (params.GetControllerProfileResponse, error) {
+	var response params.GetControllerProfileResponse
+	err := c.caller.APICall("JIMM", 4, "", "GetControllerProfile", req, &response)
+	return response, err
+}
+
+// ListControllerProfiles lists saved controller profiles, optionally filtered
+// by Juju version.
+func (c *Client) ListControllerProfiles(req *params.ListControllerProfilesRequest) ([]params.ControllerProfileSummary, error) {
+	var response params.ListControllerProfilesResponse
+	err := c.caller.APICall("JIMM", 4, "", "ListControllerProfiles", req, &response)
+	return response.Profiles, err
+}
+
+// RemoveControllerProfile removes a saved controller profile by name.
+func (c *Client) RemoveControllerProfile(req *params.RemoveControllerProfileRequest) error {
+	return c.caller.APICall("JIMM", 4, "", "RemoveControllerProfile", req, nil)
 }
 
 // UpgradeTo initiates a controller upgrade to the specified version.
@@ -281,28 +311,129 @@ func (c *Client) ListMigrationTargets(req *params.ListMigrationTargetsRequest) (
 	return response.Controllers, err
 }
 
-// GetJobInfo retrieves the status and logs of a job.
-func (c *Client) GetJobInfo(req *params.GetJobInfoRequest) (params.GetJobInfoResponse, error) {
-	var response params.GetJobInfoResponse
-	err := c.caller.APICall("JIMM", 4, "", "GetJobInfo", req, &response)
+// BootstrapInfo retrieves the status and logs of a
+// bootstrap or destroy-controller job.
+func (c *Client) BootstrapInfo(req *params.GetBootstrapInfoRequest) (params.GetBootstrapInfoResponse, error) {
+	var response params.GetBootstrapInfoResponse
+	err := c.caller.APICall("JIMM", 4, "", "BootstrapInfo", req, &response)
 	return response, err
 }
 
-// StopJob stops a job on the JIMM server.
-func (c *Client) StopJob(req *params.StopJobRequest) error {
-	return c.caller.APICall("JIMM", 4, "", "StopJob", req, nil)
+// StopBootstrap stops a bootstrap job on the JIMM server.
+func (c *Client) StopBootstrap(req *params.StopBootstrapRequest) error {
+	return c.caller.APICall("JIMM", 4, "", "StopBootstrap", req, nil)
 }
 
-// StartBootstrapJob starts a bootstrap operation on the JIMM server.
-func (c *Client) StartBootstrapJob(req *params.BootstrapParams) (*params.StartJobResponse, error) {
-	var response params.StartJobResponse
-	err := c.caller.APICall("JIMM", 4, "", "StartBootstrapJob", req, &response)
+// StartBootstrap starts a bootstrap operation on the JIMM server.
+func (c *Client) StartBootstrap(req *params.BootstrapParams) (*params.StartBootstrapResponse, error) {
+	var response params.StartBootstrapResponse
+	err := c.caller.APICall("JIMM", 4, "", "StartBootstrap", req, &response)
 	return &response, err
 }
 
-// StartDestroyControllerJob starts a destroy-controller operation on the JIMM server.
-func (c *Client) StartDestroyControllerJob(req *params.DestroyControllerRequest) (*params.StartJobResponse, error) {
-	var response params.StartJobResponse
-	err := c.caller.APICall("JIMM", 4, "", "StartDestroyControllerJob", req, &response)
+// StartDestroyController starts a destroy-controller operation on the JIMM server.
+func (c *Client) StartDestroyController(req *params.DestroyControllerRequest) (*params.StartBootstrapResponse, error) {
+	var response params.StartBootstrapResponse
+	err := c.caller.APICall("JIMM", 4, "", "StartDestroyController", req, &response)
 	return &response, err
+}
+
+// ListUserClouds lists the clouds available to the specified user.
+func (c *Client) ListUserClouds(req *params.ListUserCloudsRequest) (map[names.CloudTag]jujucloud.Cloud, error) {
+	var resp jujuparams.CloudsResult
+	err := c.caller.APICall("JIMM", 4, "", "ListUserClouds", req, &resp)
+
+	clouds := make(map[names.CloudTag]jujucloud.Cloud)
+	for tagString, cloud := range resp.Clouds {
+		tag, err := names.ParseCloudTag(tagString)
+		if err != nil {
+			return nil, errors.Trace(err)
+		}
+		clouds[tag] = cloudFromParams(tag.Id(), cloud)
+	}
+	return clouds, err
+}
+
+// ModelControllerInfo returns information about a model and the controller hosting it.
+// The model parameter can be:
+//   - A model tag (e.g., "model-2cb433a6-04eb-4ec4-9567-90426d20a004")
+//   - Owner and model name (e.g., "alice@canonical.com/my-model")
+func (c *Client) ModelControllerInfo(modelQualifier string) (*params.ModelControllerInfo, error) {
+	req := params.ModelControllerInfoRequest{ModelQualifier: modelQualifier}
+	var resp params.ModelControllerInfo
+	err := c.caller.APICall("JIMM", 4, "", "ModelControllerInfo", req, &resp)
+	return &resp, err
+}
+
+// ListModels returns controller information for all models visible to the
+// authenticated user, including a lightweight upgrade-to status when present.
+func (c *Client) ListModels() ([]params.ModelControllerInfoListItem, error) {
+	var resp params.ListModelsResponse
+	err := c.caller.APICall("JIMM", 4, "", "ListModels", nil, &resp)
+	return resp.Models, err
+}
+
+// ShowController returns information about a controller or a pending bootstrap reservation.
+func (c *Client) ShowController(controllerName string) (*params.ControllerDetails, error) {
+	req := params.ShowControllerRequest{ControllerName: controllerName}
+	var resp params.ControllerDetails
+	err := c.caller.APICall("JIMM", 4, "", "ShowController", req, &resp)
+	return &resp, err
+}
+
+func cloudFromParams(cloudName string, p jujuparams.Cloud) jujucloud.Cloud {
+	authTypes := make([]jujucloud.AuthType, len(p.AuthTypes))
+	for i, authType := range p.AuthTypes {
+		authTypes[i] = jujucloud.AuthType(authType)
+	}
+	regions := make([]jujucloud.Region, len(p.Regions))
+	for i, region := range p.Regions {
+		regions[i] = jujucloud.Region{
+			Name:             region.Name,
+			Endpoint:         region.Endpoint,
+			IdentityEndpoint: region.IdentityEndpoint,
+			StorageEndpoint:  region.StorageEndpoint,
+		}
+	}
+	var regionConfig map[string]jujucloud.Attrs
+	for r, attr := range p.RegionConfig {
+		if regionConfig == nil {
+			regionConfig = make(map[string]jujucloud.Attrs)
+		}
+		regionConfig[r] = attr
+	}
+	return jujucloud.Cloud{
+		Name:              cloudName,
+		Type:              p.Type,
+		AuthTypes:         authTypes,
+		Endpoint:          p.Endpoint,
+		IdentityEndpoint:  p.IdentityEndpoint,
+		StorageEndpoint:   p.StorageEndpoint,
+		Regions:           regions,
+		CACertificates:    p.CACertificates,
+		SkipTLSVerify:     p.SkipTLSVerify,
+		Config:            p.Config,
+		RegionConfig:      regionConfig,
+		IsControllerCloud: p.IsControllerCloud,
+	}
+}
+
+// JobInfo retrieves information about a job with the given ID.
+func (c *Client) JobInfo(req *params.JobInfoRequest) (*params.JobInfoResponse, error) {
+	var resp params.JobInfoResponse
+	err := c.caller.APICall("JIMM", 4, "", "JobInfo", req, &resp)
+	if err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
+// ListJobs returns a list of jobs based on the provided parameters.
+func (c *Client) ListJobs(req *params.ListJobsRequest) (*params.ListJobsResponse, error) {
+	var resp params.ListJobsResponse
+	err := c.caller.APICall("JIMM", 4, "", "ListJobs", req, &resp)
+	if err != nil {
+		return nil, err
+	}
+	return &resp, nil
 }
